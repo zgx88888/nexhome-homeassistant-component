@@ -1,5 +1,4 @@
-from homeassistant.components.fan import *
-from homeassistant.components.fan import FanEntityFeature  # Add this import
+from homeassistant.components.fan import FanEntity, FanEntityFeature
 from homeassistant.const import Platform
 from .utils import get_value_by_identifier
 import asyncio
@@ -30,94 +29,84 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
                         coordinator = NexhomeCoordinator(hass, Tool, params)
                         await coordinator.async_config_entry_first_refresh()
                         if device_key == '10':
-                            fans.append(NexhomeFan10(device, entity_key, Tool, coordinator))
+                            fans.append(NexhomeFan10(device, entity_key, Tool, coordinator, hass))
                         elif device_key == '133':
-                            fans.append(NexhomeFan133(device, entity_key, Tool, coordinator))
+                            fans.append(NexhomeFan133(device, entity_key, Tool, coordinator, hass))
         async_add_entities(fans)
 
 
 class NexhomeFan(NexhomeEntity, FanEntity):
 
-    def __init__(self, device, entity_key, tool, coordinator):
+    def __init__(self, device, entity_key, tool, coordinator, hass):
         super().__init__(device, entity_key, coordinator)
         self._tool = tool
+        self.hass = hass
 
     @property
     def is_on(self) -> bool:
-        if self._device.get(PowerSwitch) is not None:
-            return self._device[PowerSwitch] == '1'
-        else:
-            return False
+        return self._device.get(PowerSwitch) == '1'
 
-    def turn_on(
-        self,
-        percentage: int | None = None,
-        preset_mode: str | None = None,
-        **kwargs: Any,
-    ) -> None:
-        print("turn_on", percentage, preset_mode)
+    async def async_turn_on(self, **kwargs):
         data = {'identifier': PowerSwitch, 'value': '1'}
-        self._tool.device_control(data, self._device['address'])
+        await self.hass.async_add_executor_job(self._tool.device_control, data, self._device['address'])
 
-    def turn_off(self):
+    async def async_turn_off(self, **kwargs):
         data = {'identifier': PowerSwitch, 'value': '0'}
-        self._tool.device_control(data, self._device['address'])
+        await self.hass.async_add_executor_job(self._tool.device_control, data, self._device['address'])
+
 
 class NexhomeFan10(NexhomeFan):
-    def __init__(self, device, entity_key, tool, coordinator):
-        super().__init__(device, entity_key, tool, coordinator)
-        self._attr_supported_features = FanEntityFeature.PRESET_MODE | FanEntityFeature.TURN_ON | FanEntityFeature.TURN_OFF
+    def __init__(self, device, entity_key, tool, coordinator, hass):
+        super().__init__(device, entity_key, tool, coordinator, hass)
+        self._attr_supported_features = (
+            FanEntityFeature.PRESET_MODE | FanEntityFeature.TURN_ON | FanEntityFeature.TURN_OFF
+        )
         self._attr_preset_modes = list(FAN_MODEL_MAP.values())
         self._attr_preset_mode = None  # 当前模式
 
-    def turn_on(
-        self,
-        percentage: int | None = None,
-        preset_mode: str | None = None,
-        **kwargs: Any,
-    ) -> None:
+    async def async_turn_on(self, percentage: int | None = None, preset_mode: str | None = None, **kwargs):
         data = {'identifier': PowerSwitch, 'value': '1'}
-        self._tool.device_control(data, self._device['address'])
-
+        await self.hass.async_add_executor_job(self._tool.device_control, data, self._device['address'])
         if preset_mode is not None:
-            self.set_preset_mode(preset_mode)
+            await self.async_set_preset_mode(preset_mode)
+
+    async def async_set_preset_mode(self, preset_mode: str):
+        reverse_map = {v: k for k, v in FAN_MODEL_MAP.items()}
+        if preset_mode not in reverse_map:
+            return
+        data = {'identifier': Windspeed, 'value': reverse_map[preset_mode]}
+        await self.hass.async_add_executor_job(self._tool.device_control, data, self._device['address'])
 
     @property
     def preset_mode(self) -> str | None:
         speed_value = self._device.get(Windspeed)
-        if speed_value in FAN_MODEL_MAP:
-            return FAN_MODEL_MAP[speed_value]
-        return None
+        return FAN_MODEL_MAP.get(speed_value, None)
 
-    def set_preset_mode(self, preset_mode: str) -> None:
-        # 创建模式到值的反向映射
-        reverse_map = {v: k for k, v in FAN_MODEL_MAP.items()}
-
-        if preset_mode not in reverse_map:
-            return
-
-        data = {'identifier': Windspeed, 'value': reverse_map[preset_mode]}
-        ss = self._tool.device_control(data, self._device['address'])
-        print("Set Speed:", data, ss.json())
 
 class NexhomeFan133(NexhomeFan):
-    def __init__(self, device, entity_key, tool, coordinator):
-        super().__init__(device, entity_key, tool, coordinator)
-        self._attr_supported_features = FanEntityFeature.PRESET_MODE | FanEntityFeature.TURN_ON | FanEntityFeature.TURN_OFF
-        self._attr_preset_modes = ["低速", "高速"]  # 定义风速
+    def __init__(self, device, entity_key, tool, coordinator, hass):
+        super().__init__(device, entity_key, tool, coordinator, hass)
+        self._attr_supported_features = (
+            FanEntityFeature.PRESET_MODE | FanEntityFeature.TURN_ON | FanEntityFeature.TURN_OFF
+        )
+        self._attr_preset_modes = ["低速", "高速"]
         self._attr_preset_mode = None  # 当前模式
 
-    def turn_on(
-        self,
-        percentage: int | None = None,
-        preset_mode: str | None = None,
-        **kwargs: Any,
-    ) -> None:
+    async def async_turn_on(self, percentage: int | None = None, preset_mode: str | None = None, **kwargs):
         data = {'identifier': PowerSwitch, 'value': '1'}
-        self._tool.device_control(data, self._device['address'])
-
+        await self.hass.async_add_executor_job(self._tool.device_control, data, self._device['address'])
         if preset_mode is not None:
-            self.set_preset_mode(preset_mode)
+            await self.async_set_preset_mode(preset_mode)
+
+    async def async_set_preset_mode(self, preset_mode: str):
+        if preset_mode == "低速":
+            backend_value = '1'
+        elif preset_mode == "高速":
+            backend_value = '3'
+        else:
+            return
+        data = {'identifier': Windspeed, 'value': backend_value}
+        await self.hass.async_add_executor_job(self._tool.device_control, data, self._device['address'])
 
     @property
     def preset_mode(self) -> str | None:
@@ -127,15 +116,3 @@ class NexhomeFan133(NexhomeFan):
         elif speed_value == '3':
             return "高速"
         return None
-
-    def set_preset_mode(self, preset_mode: str) -> None:
-        if preset_mode == "低速":
-            backend_value = '1'
-        elif preset_mode == "高速":
-            backend_value = '3'
-        else:
-            return
-
-        data = {'identifier': Windspeed, 'value': backend_value}
-        ss = self._tool.device_control(data, self._device['address'])
-        print("Set Speed:", data, ss.json())
