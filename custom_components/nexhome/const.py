@@ -43,6 +43,7 @@ HCHO = "HCHO"
 CO2 = "CO2"
 LUX = "LUX"
 VOC = "VOC"
+PM10 = "PM10"
 Default_Device = {
     'id': 'teshudechangjingmianban',
     'address': '680AE2FFFE33326D-2222222',
