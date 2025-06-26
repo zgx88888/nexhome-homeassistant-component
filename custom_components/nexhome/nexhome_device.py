@@ -214,4 +214,49 @@ NEXHOME_DEVICE = {
             }
         }
     },
+    "61": {
+    "name": "空气检测仪",
+    "entities": {
+        "61_humidity": {
+            "type": Platform.SENSOR,
+            "identifiers": [Humidity],
+            "name": "湿度",
+            "device_class": SensorDeviceClass.HUMIDITY,
+            "unit": PERCENTAGE,
+            "state_class": SensorStateClass.MEASUREMENT
+        },
+        "61_temperature": {
+            "type": Platform.SENSOR,
+            "identifiers": [Temperature],
+            "name": "温度",
+            "device_class": SensorDeviceClass.TEMPERATURE,
+            "unit": UnitOfTemperature.CELSIUS,
+            "state_class": SensorStateClass.MEASUREMENT
+        },
+        "61_pm25": {
+            "type": Platform.SENSOR,
+            "identifiers": [PM25],
+            "name": "PM 2.5",
+            "device_class": SensorDeviceClass.PM25,
+            "unit": CONCENTRATION_MICROGRAMS_PER_CUBIC_METER,
+            "state_class": SensorStateClass.MEASUREMENT
+        },
+        "61_co2": {
+            "type": Platform.SENSOR,
+            "identifiers": [CO2],
+            "name": "CO2",
+            "device_class": SensorDeviceClass.CO2,
+            "unit": CONCENTRATION_PARTS_PER_MILLION,
+            "state_class": SensorStateClass.MEASUREMENT
+        },
+        "61_pm10": {
+            "type": Platform.SENSOR,
+            "identifiers": [PM10],
+            "name": "PM10",
+            "device_class": SensorDeviceClass.PM10, 
+            "unit": CONCENTRATION_MICROGRAMS_PER_CUBIC_METER,
+            "state_class": SensorStateClass.MEASUREMENT
+        },
+    }
+},
 }
