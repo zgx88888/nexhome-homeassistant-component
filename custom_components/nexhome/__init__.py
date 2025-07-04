@@ -8,12 +8,19 @@ from .utils import set_hass_obj
 # discoverObj = None
 
 async def async_setup_entry(hass, entry):
+    # global discoverObj
     await register_device_list_service(hass, entry)
     await hass.config_entries.async_forward_entry_setups(entry, ALL_PLATFORM)
-    return True
+    # for platform in ALL_PLATFORM:
+    #     await hass.async_create_task(hass.config_entries.async_forward_entry_setup(
+    #         entry, platform))
 
-async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    await hass.config_entries.async_forward_entry_unloads(entry, ALL_PLATFORM)
+    # discoverObj = hass.data[DOMAIN].get(DISCOVER)
+    # if discoverObj is None:
+    #     discoverObj = await discover(hass)
+    # else:
+    #     await discoverObj.start()
+
     return True
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
