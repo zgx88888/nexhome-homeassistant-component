@@ -9,7 +9,7 @@ from homeassistant.const import (
 from homeassistant.components.sensor import SensorStateClass, SensorDeviceClass
 from .const import (
     FAN_MODEL_MAP, PowerSwitch, TemperatureSet, Temperature, Windspeed, WorkMode, Location, Brightness,
-    Humidity, ColorTem, PM25, HCHO, VOC, CO2, LUX
+    Humidity, ColorTem, PM25, HCHO, VOC, CO2, LUX, PM10
 )
 NEXHOME_DEVICE = {
     "default": {
