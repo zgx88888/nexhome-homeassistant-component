@@ -7,6 +7,8 @@ from .nexhome_entity import NexhomeEntity
 from .header import ServiceTool
 from .nexhome_device import NEXHOME_DEVICE
 from .nexhome_coordinator import NexhomeCoordinator
+from homeassistant.config_entries import ConfigEntryState
+
 import logging
 _LOGGER = logging.getLogger(__name__)
 
@@ -27,7 +29,8 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
                         identifiers = config["identifiers"]
                         params = [{'identifier': item, 'address': device_address} for item in identifiers]
                         coordinator = NexhomeCoordinator(hass, Tool, params)
-                        await coordinator.async_config_entry_first_refresh()
+                        if config_entry.state == ConfigEntryState.SETUP_IN_PROGRESS:
+                            await coordinator.async_config_entry_first_refresh()
                         if device_key == '10':
                             fans.append(NexhomeFan10(device, entity_key, Tool, coordinator, hass))
                         elif device_key == '133':
