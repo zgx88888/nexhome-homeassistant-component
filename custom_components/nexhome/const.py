@@ -9,8 +9,6 @@ SN_CONFIG = 'sn_input'
 IP_CONFIG = "ip_address"
 DEVICE_DATA = "device_list"
 DISCOVER = 'discover_obj'
-FILTER_MODE_CONFIG = "filter_mode"  # "include" 或 "exclude"
-FILTER_DEVICES_CONFIG = "filter_devices"  # 设备ID列表
 
 # 轮询时间
 TIME_NUMBER = 3
@@ -36,7 +34,6 @@ TemperatureSet = "TemperatureSet"
 Temperature = "Temperature"
 Windspeed = "Windspeed"
 WorkMode = "WorkMode"
-WindDirection = "WindDirection"
 Location = "Location"
 Brightness = "Brightness"
 Humidity = "Humidity"
@@ -45,7 +42,6 @@ Close = "Close"
 Open = "Open"
 Stop = "Stop"
 PM25 = "PM25"
-PM10 = "PM10"
 HCHO = "HCHO"
 CO2 = "CO2"
 LUX = "LUX"

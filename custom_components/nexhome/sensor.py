@@ -2,7 +2,6 @@ from .nexhome_entity import NexhomeEntity
 from .nexhome_device import NEXHOME_DEVICE
 from .header import ServiceTool
 from .nexhome_coordinator import NexhomeCoordinator
-from .coordinator_manager import CoordinatorManager
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.const import Platform
 from .const import (
@@ -19,10 +18,6 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     SN = config_entry.data.get(SN_CONFIG)
     Tool = ServiceTool(IP, SN)
     devices = hass.data[DOMAIN][DEVICES]
-    
-    # 获取协调器管理器实例
-    coordinator_manager = CoordinatorManager.get_instance(hass, Tool, config_entry.entry_id)
-    
     if devices:
         sensors = []
         for device in devices:
@@ -32,25 +27,12 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
                 for entity_key, config in NEXHOME_DEVICE[device_key]["entities"].items():
                     if config["type"] == Platform.SENSOR:
                         identifiers = config["identifiers"]
-                        # 使用协调器管理器获取或创建共享协调器
-                        coordinator = coordinator_manager.get_or_create_coordinator(device_address, identifiers)
+                        params = [{'identifier': item, 'address': device_address} for item in identifiers]
+                        coordinator = NexhomeCoordinator(hass, Tool, params)
+                        # 只在setup阶段调用首次刷新
                         if config_entry.state == ConfigEntryState.SETUP_IN_PROGRESS:
                             await coordinator.async_config_entry_first_refresh()
-                        device_class_map = {
-                            '8': NexhomeSensor,
-                            '12': NexhomeSensor,
-                            '13': NexhomeSensor,
-                            '14': NexhomeSensor,
-                            '15': NexhomeSensor,
-                            '59': NexhomeSensor,
-                            '60': NexhomeSensor,
-                            '61': NexhomeSensor,
-                            '62': NexhomeSensor,
-                            '110': NexhomeSensor,
-                        }
-                        if device_key in device_class_map:
-                            sensor_class = device_class_map[device_key]
-                            sensors.append(sensor_class(device, entity_key, Tool, coordinator))
+                        sensors.append(NexhomeSensor(device, entity_key, Tool, coordinator))
         async_add_entities(sensors)
 
 
