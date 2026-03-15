@@ -1,9 +1,10 @@
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
-from .const import DEVICES, ALL_PLATFORM, Default_Device, SN_CONFIG, IP_CONFIG, DISCOVER, DOMAIN
+from .const import DEVICES, ALL_PLATFORM, Default_Device, SN_CONFIG, IP_CONFIG, DISCOVER, DOMAIN, FILTER_MODE_CONFIG, FILTER_DEVICES_CONFIG
 from .header import ServiceTool
 from .nexhome_discover import discover, send_test_message
 from .utils import set_hass_obj
+from .coordinator_manager import CoordinatorManager
 # 在组件全局作用域中存储监听器引用
 # discoverObj = None
 
@@ -28,6 +29,8 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # 卸载平台
     for platform in ALL_PLATFORM:
         await hass.config_entries.async_forward_entry_unload(entry, platform)
+    # 清理跨 reload 保留的缓存（Home Assistant reload 不会重启 Python 进程）
+    await CoordinatorManager.async_remove_instance(entry.entry_id)
     return True
 
 
@@ -38,6 +41,27 @@ async def register_device_list_service(hass, entry):
     await tool.login(hass)
     deviceList = await tool.getDevice(hass)
     # deviceList = [Default_Device] + deviceList
+    
+    # 从配置中获取筛选设置
+    filter_mode = entry.data.get(FILTER_MODE_CONFIG, "exclude")
+    filter_devices = entry.data.get(FILTER_DEVICES_CONFIG, [])
+    
+    # 过滤设备
+    if deviceList and filter_devices:
+        if filter_mode == "include":
+            # 包含模式：只保留选中的设备
+            deviceList = [
+                device for device in deviceList
+                if device.get('id') in filter_devices
+            ]
+        else:
+            # 排除模式：排除选中的设备
+            deviceList = [
+                device for device in deviceList
+                if device.get('id') not in filter_devices
+            ]
+    # 如果filter_devices为空，排除模式下相当于接入所有设备
+    
     device_value = [
         {
             'device_id': device.get('id'),
@@ -47,6 +71,7 @@ async def register_device_list_service(hass, entry):
         }
         for device in deviceList
     ]
+    print('11', device_value)
     set_hass_obj(hass, DEVICES, device_value)
     # if DOMAIN not in hass.data:
     #     hass.data[DOMAIN] = {}
